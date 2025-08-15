@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Billing Service
-  description: 	Handles invoicing, refunds, and recurring payment logic
+  description: Handles invoicing, refunds, and recurring payment logic
   x-cortex-tag: billing-service
   x-cortex-type: service
   x-cortex-groups:
