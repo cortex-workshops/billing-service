@@ -18,3 +18,7 @@ info:
     jira:
       labels:
         - name: payments
+  x-cortex-link:
+  - name: Logs
+    type: logs
+    url: https://datadog.com
