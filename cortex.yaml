@@ -22,3 +22,6 @@ info:
   - name: Logs
     type: logs
     url: https://datadog.com
+  - name: Billing API Spec
+    type: OPENAPI
+    url: ./swagger.json
