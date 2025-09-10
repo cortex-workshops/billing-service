@@ -20,10 +20,10 @@ info:
         - name: payments
   x-cortex-link:
   - name: Logs
-  x-cortex-dependency:
-  - tag: test-database
     type: logs
     url: https://datadog.com
   - name: Billing API Spec
     type: OPENAPI
     url: ./swagger.json
+  x-cortex-dependency:
+  - tag: test-database
