@@ -25,7 +25,7 @@ jobs:
       S_PAT_MARION:   ${{ secrets.PAT_MARION }}
       S_PAT_ROSHNI:   ${{ secrets.PAT_ROSHNI }}
       S_PAT_GIANPAUL: ${{ secrets.PAT_GIANPAUL }}
-      S_PAT_MIKE: ${{ secrets.PAT_MIKE }}
+      S_PAT_MIKE:     ${{ secrets.PAT_MIKE }}
 
       # Team actors (Payments)
       ACTORS: |
@@ -36,8 +36,9 @@ jobs:
           {"username":"mike","git_name":"Mike Rodriguez","git_email":"mike.rodriguez@cortex.io","pat_secret":"PAT_MIKE"}
         ]
 
+      # Fixed JSON (split last two entries correctly)
       REVIEWER_CANDIDATES: |
-        ["PAT_TAYLOR","PAT_CATHLEEN","PAT_SALLY","PAT_JEFF","PAT_STEPH","PAT_CHASE","PAT_MARION","PAT_ROSHNI","PAT_GIANPAUL, PAT_MIKE"]
+        ["PAT_TAYLOR","PAT_CATHLEEN","PAT_SALLY","PAT_JEFF","PAT_STEPH","PAT_CHASE","PAT_MARION","PAT_ROSHNI","PAT_GIANPAUL","PAT_MIKE"]
 
       # Billing: fairly quick throughput, higher merge rate
       FIRST_REVIEW_MIN: "18"
@@ -105,7 +106,8 @@ jobs:
             if [ $r -lt $acc ]; then echo "value=${scenarios[i]}" >> $GITHUB_OUTPUT; break; fi
           done
 
-      - name: Commit change (README preferred; vary size)
+      # >>> Enhanced commit step (Payments-tuned ratios)
+      - name: Commit change (README preferred; varied size, files, and commits)
         if: steps.auth.outputs.skip != 'true'
         shell: bash
         run: |
@@ -114,11 +116,82 @@ jobs:
           git config user.email "${EMAIL}"
           BRANCH="${BRANCH}"
           git checkout -b "$BRANCH"
-          echo "Update by ${AUTHOR} at $(date -u)" >> README.md
-          git add -A
-          git commit -m "feat: sim update by ${AUTHOR} at $(date -u)"
+
+          scenario="${{ steps.scenario.outputs.value }}"
+
+          # Lines per commit tuned for Payments
+          case "$scenario" in
+            BIG_DIFF)   MIN=10; MAX=25 ;;  # bigger bursts
+            SMALL_DIFF) MIN=1;  MAX=4  ;;  # tiny tweaks
+            *)          MIN=2;  MAX=10 ;;  # default medium
+          esac
+
+          # Commits per PR (skew higher for BIG_DIFF)
+          COMMITS=$((1 + RANDOM % 4))   # 1–4
+          if [ "$scenario" = "BIG_DIFF" ] && [ "$COMMITS" -lt 2 ]; then COMMITS=$((2 + RANDOM % 3)); fi  # 2–4
+          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
+
+          # Decide multi-file behavior
+          if [ "$scenario" = "BIG_DIFF" ]; then
+            ADD_SECOND_FILE=true
+          else
+            [ $((RANDOM % 10)) -lt 4 ] && ADD_SECOND_FILE=true || ADD_SECOND_FILE=false  # 40%
+          fi
+
+          # Target files: README roughly 60% vs dated notes 40%
+          if [ $((RANDOM % 10)) -lt 6 ]; then
+            PRIMARY_FILE="README.md"
+          else
+            mkdir -p billing/notes
+            PRIMARY_FILE="billing/notes/$(date -u +%Y-%m-%d).md"
+          fi
+
+          # Secondary file path, if enabled
+          SECONDARY_FILE=""
+          if $ADD_SECOND_FILE; then
+            mkdir -p billing/misc
+            SECONDARY_FILE="billing/misc/changes-$(date -u +%Y%m%d).md"
+          fi
+
+          for c in $(seq 1 "$COMMITS"); do
+            # When a second file is allowed, 60% chance this commit touches it too
+            TOUCH_SECOND=false
+            if $ADD_SECOND_FILE; then
+              [ $((RANDOM % 10)) -lt 6 ] && TOUCH_SECOND=true
+            fi
+
+            LINES=$(( MIN + RANDOM % (MAX - MIN + 1) ))
+
+            # Primary file write
+            {
+              echo ""
+              echo "### Payments update by ${AUTHOR} (commit ${c}/${COMMITS}) at $(date -u)"
+              for i in $(seq 1 "$LINES"); do
+                echo "- billing activity ${i} (commit ${c}) on $(date -u) id=$RANDOM"
+              done
+            } >> "$PRIMARY_FILE"
+            git add "$PRIMARY_FILE"
+
+            # Optional secondary file write
+            if $TOUCH_SECOND && [ -n "$SECONDARY_FILE" ]; then
+              EXTRA_LINES=$((1 + RANDOM % 7))  # 1–7
+              {
+                echo ""
+                echo "### Extra billing changes by ${AUTHOR} (commit ${c}/${COMMITS}) at $(date -u)"
+                for i in $(seq 1 "$EXTRA_LINES"); do
+                  echo "* note ${i} (commit ${c}) $(date -u) token=$RANDOM"
+                done
+              } >> "$SECONDARY_FILE"
+              git add "$SECONDARY_FILE"
+            fi
+
+            git commit -m "payments(sim): ${LINES} lines in ${PRIMARY_FILE}${TOUCH_SECOND:+ + extra} (${scenario}) [${c}/${COMMITS}] at $(date -u)"
+          done
+
+          # Push once
           git push -u origin HEAD
           set +e
+      # <<< Enhanced commit step
 
       - name: Maybe open a PR
         id: openpr
@@ -127,8 +200,8 @@ jobs:
         run: |
           if [ $((RANDOM % 10)) -lt 7 ]; then
             URL=$(gh pr create \
-              --title "Sim PR by ${AUTHOR}" \
-              --body "Automated demo PR at $(date -u). Scenario: ${{ steps.scenario.outputs.value }}" \
+              --title "Sim PR (Payments) by ${AUTHOR}" \
+              --body "Automated Payments demo PR at $(date -u). Scenario: ${{ steps.scenario.outputs.value }}. Commits: ${COMMITS:-1}" \
               --base main --head "${BRANCH}" --draft=false || true)
             echo "url=$URL" >> $GITHUB_OUTPUT
           fi
@@ -249,7 +322,6 @@ jobs:
               "baseRefName=" + .baseRefName + "\n" +
               "isDraft=" + (.isDraft|tostring)
             '
-
 
       - name: Maybe (auto) merge PR
         if: steps.auth.outputs.skip != 'true' && steps.pr.outputs.number
