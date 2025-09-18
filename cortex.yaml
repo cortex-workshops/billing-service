@@ -25,5 +25,9 @@ info:
   - name: Billing API Spec
     type: OPENAPI
     url: ./swagger.json
+  x-cortex-oncall:
+    pagerduty:
+      id: P8U8OR1   # PagerDuty Service ID
+      type: SERVICE
   x-cortex-dependency:
   - tag: test-database
