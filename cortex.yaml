@@ -25,6 +25,9 @@ info:
   - name: Billing API Spec
     type: OPENAPI
     url: ./swagger.json
+  - name: Runbook
+    type: RUNBOOK
+    url: https://confluence.runbook.com
   x-cortex-oncall:
     pagerduty:
       id: P8U8OR1   # PagerDuty Service ID
