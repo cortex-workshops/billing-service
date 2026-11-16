@@ -1,36 +1,42 @@
 openapi: 3.0.0
 info:
   title: Billing Service
-  description: Handles invoicing, refunds, and recurring payment logic
-  x-cortex-tag: billing-service
-  x-cortex-type: service
-  x-cortex-groups:
-    - financial-systems
-  x-cortex-owners:
-    - type: group
-      name: cortex-workshops/payments-team
-      provider: GITHUB
+  description: "Handles invoicing, refunds, and recurring payment logic"
   x-cortex-git:
     github:
       alias: cortex
       repository: cortex-workshops/billing-service
+  x-cortex-tag: billing-service
+  x-cortex-link:
+  - url: https://datadog.com
+    name: Logs
+    type: logs
+  - url: ./swagger.json
+    name: Billing API Spec
+    type: OPENAPI
+  - url: https://confluence.runbook.com
+    name: Runbook
+    type: RUNBOOK
+  x-cortex-type: service
+  x-cortex-groups:
+  - financial-systems
   x-cortex-issues:
     jira:
       labels:
-        - name: payments
-  x-cortex-link:
-  - name: Logs
-    type: logs
-    url: https://datadog.com
-  - name: Billing API Spec
-    type: OPENAPI
-    url: ./swagger.json
-  - name: Runbook
-    type: RUNBOOK
-    url: https://confluence.runbook.com
+      - name: payments
   x-cortex-oncall:
     pagerduty:
-      id: P8U8OR1   # PagerDuty Service ID
+      id: P8U8OR1
       type: SERVICE
+  x-cortex-owners:
+  - name: cortex-workshops/payments-team
+    type: group
+    provider: GITHUB
   x-cortex-dependency:
   - tag: test-database
+  - tag: spanner-us-central1
+    description: Subscription and invoice records
+  x-cortex-relationships:
+  - type: environment-mapping
+    destinations:
+    - tag: production
