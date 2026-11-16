@@ -32,6 +32,9 @@ info:
   - name: cortex-workshops/payments-team
     type: group
     provider: GITHUB
+  - name: web-team
+    type: group
+    provider: CORTEX
   x-cortex-dependency:
   - tag: test-database
   - tag: spanner-us-central1
